@@ -12,14 +12,15 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 |---|---|---|
 | ![](docs/screenshots/applis-glass-sombre-v2.png) | ![](docs/screenshots/reglages-glass-sombre-v2.png) | ![](docs/screenshots/reglages-neu-clair-v2.png) |
 
-| Grille de widgets en mode édition | Feux et plaque d'une voiture importée |
-|---|---|
-| ![](docs/screenshots/grille-widgets-v2.png) | ![](docs/screenshots/editeur-voiture-v2.png) |
+| Grille de widgets en mode édition | Feux et plaque | Stickers |
+|---|---|---|
+| ![](docs/screenshots/grille-widgets-v2.png) | ![](docs/screenshots/editeur-voiture-v2.png) | ![](docs/screenshots/stickers-v2.png) |
 
 ## Fonctionnalités
 
 - **Ta voiture à l'écran**, posée sous une ligne d'horizon lumineuse. Des traits de lumière défilent et la voiture vibre légèrement selon la vitesse GPS.
 - **Ta plaque d'immatriculation** affichée sur la voiture.
+- **Stickers** : ajoute tes propres PNG sur la voiture, puis déplace-les, agrandis-les et tourne-les au doigt.
 - **Ta propre voiture** : importe un PNG à fond transparent (vue arrière) depuis les réglages, puis place toi-même les feux arrière (allumés en mode sombre) et la plaque, et choisis la couleur de la plaque et du texte.
 - **Vitesse GPS** en km/h ou mph, **heure du système**, **météo** de ta position ([Open-Meteo](https://open-meteo.com), sans compte).
 - **Grille de widgets** jusqu'en bas de l'écran : par appui long, ajoute, déplace et redimensionne chaque widget, et règle l'arrondi de ses coins. Météo DEON, lecteur de musique DEON (style YT Music, avec pouces et pochette) ou n'importe quel widget Android, comme le lecteur YT Music d'origine.

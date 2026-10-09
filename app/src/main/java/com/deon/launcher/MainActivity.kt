@@ -101,14 +101,16 @@ class MainActivity : ComponentActivity(), LocationListener {
     private val carFile by lazy { java.io.File(filesDir, "car.png") }
     private val pickCar = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(::importCar) }
 
-    /** Keeps only the visible part of the picture (transparent margins cut off), at most 1024 px wide. */
-    private fun importCar(uri: Uri) {
+    private val pickSticker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(::importSticker) }
+
+    /** Reads a picture and keeps only its visible part (transparent margins cut off), at most [maxWidth] px wide. */
+    private fun loadCropped(uri: Uri, maxWidth: Int): Bitmap? {
         val src = runCatching {
             contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }
         }.getOrNull()
         if (src == null) {
             android.widget.Toast.makeText(this, "Image illisible", android.widget.Toast.LENGTH_LONG).show()
-            return
+            return null
         }
         var l = src.width; var t = src.height; var r = -1; var b = -1
         val row = IntArray(src.width)
@@ -118,8 +120,22 @@ class MainActivity : ComponentActivity(), LocationListener {
                 if (x < l) l = x; if (x > r) r = x; if (y < t) t = y; if (y > b) b = y
             }
         }
-        var car = if (r < 0) src else Bitmap.createBitmap(src, l, t, r - l + 1, b - t + 1)
-        if (car.width > 1024) car = Bitmap.createScaledBitmap(car, 1024, car.height * 1024 / car.width, true)
+        var out = if (r < 0) src else Bitmap.createBitmap(src, l, t, r - l + 1, b - t + 1)
+        if (out.width > maxWidth) out = Bitmap.createScaledBitmap(out, maxWidth, out.height * maxWidth / out.width, true)
+        return out
+    }
+
+    /** Saves the sticker in the app files and drops it in the middle of the car. */
+    private fun importSticker(uri: Uri) {
+        val img = loadCropped(uri, 512) ?: return
+        val id = System.currentTimeMillis().toString(36)
+        stickerFile(this, id).outputStream().use { img.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val l = settings.carLayout
+        settings.carLayout = l.copy(stickers = l.stickers + Sticker(id, Offset(.5f, .4f), .25f, img.height.toFloat() / img.width, 0f))
+    }
+
+    private fun importCar(uri: Uri) {
+        val car = loadCropped(uri, 1024) ?: return
         carFile.outputStream().use { car.compress(Bitmap.CompressFormat.PNG, 100, it) }
         customCar = car.asImageBitmap()
         settings.customCar = true
@@ -410,7 +426,7 @@ class MainActivity : ComponentActivity(), LocationListener {
                 exit = fadeOut(tween(180)) + slideOutHorizontally(tween(200)) { it / 12 }
             ) { Overlay { SettingsScreen(settingsActions) { settingsOpen = false } } }
             AnimatedVisibility(carEditor, enter = fadeIn(tween(200)), exit = fadeOut(tween(160))) {
-                Overlay { CarEditor(customCar) { carEditor = false } }
+                Overlay { CarEditor(customCar, { pickSticker.launch(arrayOf("image/png", "image/webp", "image/*")) }) { carEditor = false } }
             }
         }
         }

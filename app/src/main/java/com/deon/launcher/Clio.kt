@@ -61,6 +61,7 @@ fun ClioScene(
     val shake = min(speed / 130f, 1f)
     val moving = speed > 2f
     val shaking = moving && motion
+    val stickerImages = rememberStickerImages(layout.stickers)
 
     BoxWithConstraints(modifier.clipToBounds()) {
         val w = maxWidth
@@ -91,6 +92,7 @@ fun ClioScene(
             val carModifier = Modifier.size(carW, carH).align(Alignment.TopCenter).offset(x = sway.dp, y = h * GROUND - carH + bounce.dp)
             Image(customCar, "Voiture", carModifier, colorFilter = nightTint)
             Canvas(carModifier) {
+                drawStickers(layout.stickers, stickerImages, night)
                 drawPlate(layout, plate, night)
                 if (night) drawTailGlow(layout)
             }
@@ -103,6 +105,7 @@ fun ClioScene(
             colorFilter = nightTint
         )
         Canvas(Modifier.size(img).align(Alignment.TopCenter).offset(x = sway.dp, y = carY)) {
+            drawStickers(layout.stickers, stickerImages, night)
             drawPlate(layout, plate, night)
             if (night) drawTailGlow(layout)
         }

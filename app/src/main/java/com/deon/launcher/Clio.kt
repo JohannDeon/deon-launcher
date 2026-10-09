@@ -40,7 +40,7 @@ private const val GROUND = 0.90f
  */
 @Composable
 fun ClioScene(
-    speedKmh: Float, night: Boolean, line: Color, accent: Color, plate: String, motion: Boolean,
+    speedKmh: Float, night: Boolean, line: Color, accent: Color, plate: String, layout: CarLayout, motion: Boolean,
     customCar: ImageBitmap? = null, modifier: Modifier = Modifier
 ) {
     val speed by rememberUpdatedState(speedKmh)
@@ -88,11 +88,12 @@ fun ClioScene(
             val ratio = customCar.height.toFloat() / customCar.width
             val carW = minOf(img * 0.78f, h * 0.62f / ratio)
             val carH = carW * ratio
-            Image(
-                customCar, "Voiture",
-                Modifier.size(carW, carH).align(Alignment.TopCenter).offset(x = sway.dp, y = h * GROUND - carH + bounce.dp),
-                colorFilter = nightTint
-            )
+            val carModifier = Modifier.size(carW, carH).align(Alignment.TopCenter).offset(x = sway.dp, y = h * GROUND - carH + bounce.dp)
+            Image(customCar, "Voiture", carModifier, colorFilter = nightTint)
+            Canvas(carModifier) {
+                drawPlate(layout, plate, night)
+                if (night) drawTailGlow(layout)
+            }
             return@BoxWithConstraints
         }
         Image(
@@ -102,35 +103,10 @@ fun ClioScene(
             colorFilter = nightTint
         )
         Canvas(Modifier.size(img).align(Alignment.TopCenter).offset(x = sway.dp, y = carY)) {
-            drawPlate(plate, night)
-            if (!night) return@Canvas
-            // Tail light glow on the red lenses of the photo.
-            for (fx in floatArrayOf(0.205f, 0.795f)) {
-                val c = Offset(size.width * fx, size.height * 0.515f)
-                drawCircle(Brush.radialGradient(listOf(Color(0x88FF2020), Color.Transparent), c, size.width * .12f), size.width * .12f, c)
-            }
+            drawPlate(layout, plate, night)
+            if (night) drawTailGlow(layout)
         }
     }
-}
-
-private val platePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-    textAlign = android.graphics.Paint.Align.CENTER
-    typeface = android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD)
-    color = android.graphics.Color.BLACK
-}
-
-/** Writes [text] on the plate of the photo (its white area sits at these shares of the 369 px image). */
-private fun DrawScope.drawPlate(text: String, night: Boolean) {
-    val l = size.width * (151f / 369); val r = size.width * (234f / 369)
-    val t = size.height * (242f / 369); val b = size.height * (257f / 369)
-    drawRect(if (night) Color(0xFFC9CDD3) else Color(0xFFF4F5F6), Offset(l, t), Size(r - l, b - t))
-    if (text.isBlank()) return
-    platePaint.textSize = (b - t) * .8f
-    // Shrink long plates so they stay inside the frame.
-    val width = platePaint.measureText(text)
-    if (width > (r - l) * .92f) platePaint.textSize *= (r - l) * .92f / width
-    val fm = platePaint.fontMetrics
-    drawContext.canvas.nativeCanvas.drawText(text, (l + r) / 2, (t + b) / 2 - (fm.ascent + fm.descent) / 2, platePaint)
 }
 
 /** A thin line that fades out at both ends, with a soft glow below it only, and light streaks. */

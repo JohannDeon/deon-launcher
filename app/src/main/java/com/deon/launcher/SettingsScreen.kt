@@ -35,6 +35,7 @@ class SettingsActions(
     val appInfo: () -> Unit,
     val importCar: () -> Unit,
     val resetCar: () -> Unit,
+    val editCar: () -> Unit,
     val version: String,
 )
 
@@ -67,14 +68,11 @@ fun SettingsScreen(actions: SettingsActions, onClose: () -> Unit) {
                             if (s.customCar) SmallButton("Clio d'origine", actions.resetCar)
                         }
                     }
-                    if (s.customCar) Text(
-                        "La plaque personnalisée ne s'affiche que sur la Clio d'origine.",
-                        Modifier.padding(start = 34.dp, bottom = 8.dp), color = c.onSurfaceVariant, fontSize = 13.sp
-                    )
-                    else Text(
+                    Text(
                         "PNG à fond transparent, voiture vue de l'arrière.",
                         Modifier.padding(start = 34.dp, bottom = 8.dp), color = c.onSurfaceVariant, fontSize = 13.sp
                     )
+                    Setting(Ui.Edit, "Feux et plaque") { SmallButton("Ajuster", actions.editCar) }
                     Setting(Ui.Car, "Plaque d'immatriculation") { PlateField(s.plate) { s.plate = it } }
                     Setting(Ui.Timer, "Afficher la vitesse") { Toggle(s.showSpeed) { s.showSpeed = it } }
                     Setting(Ui.Timer, "Unité de vitesse") { Choice(SpeedUnit.entries, s.speedUnit, { it.label }) { s.speedUnit = it } }

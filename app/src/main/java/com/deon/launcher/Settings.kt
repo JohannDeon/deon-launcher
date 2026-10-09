@@ -41,6 +41,8 @@ class LauncherSettings(context: Context) {
     private val _carMotion = mutableStateOf(prefs.getBoolean("car_motion", true))
     private val _showSpeed = mutableStateOf(prefs.getBoolean("show_speed", true))
     private val _customCar = mutableStateOf(prefs.getBoolean("custom_car", false))
+    private val _layoutClio = mutableStateOf(CarLayout.decode(prefs.getString("layout_clio", null), CarLayout.Clio))
+    private val _layoutCustom = mutableStateOf(CarLayout.decode(prefs.getString("layout_custom", null), CarLayout.Imported))
 
     var style: Style
         get() = _style.value
@@ -73,6 +75,19 @@ class LauncherSettings(context: Context) {
     var customCar: Boolean
         get() = _customCar.value
         set(v) { _customCar.value = v; prefs.edit().putBoolean("custom_car", v).apply() }
+
+    /** Tail lights and plate of the car shown now (built-in Clio or imported picture). */
+    var carLayout: CarLayout
+        get() = if (customCar) _layoutCustom.value else _layoutClio.value
+        set(v) {
+            val key = if (customCar) "layout_custom" else "layout_clio"
+            (if (customCar) _layoutCustom else _layoutClio).value = v
+            prefs.edit().putString(key, v.encode()).apply()
+        }
+
+    fun resetCarLayout() {
+        carLayout = if (customCar) CarLayout.Imported else CarLayout.Clio
+    }
 }
 
 val LocalSettings = staticCompositionLocalOf<LauncherSettings> { error("no settings") }

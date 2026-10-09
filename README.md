@@ -1,6 +1,6 @@
 # DEON Launcher
 
-Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 1280x720). Il affiche ta voiture en grand, avec la vitesse GPS, l'heure, la météo et ton lecteur de musique, dans un style glassmorphism ou neumorphism.
+Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 1280x720), testé sur l'autoradio **ROCO K706**. Il affiche ta voiture en grand, avec la vitesse GPS, l'heure, la météo et ton lecteur de musique, dans un style glassmorphism ou neumorphism.
 
 ![Accueil, glassmorphism sombre](docs/screenshots/accueil-glass-sombre.png)
 
@@ -12,13 +12,17 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 |---|---|---|
 | ![](docs/screenshots/applis-glass-sombre.png) | ![](docs/screenshots/reglages-glass-sombre.png) | ![](docs/screenshots/reglages-neu-clair.png) |
 
+| Feux et plaque d'une voiture importée |
+|---|
+| ![](docs/screenshots/editeur-voiture.png) |
+
 ## Fonctionnalités
 
 - **Ta voiture à l'écran**, posée sous une ligne d'horizon lumineuse. Des traits de lumière défilent et la voiture vibre légèrement selon la vitesse GPS.
 - **Ta plaque d'immatriculation** affichée sur la voiture.
-- **Ta propre voiture** : importe un PNG à fond transparent (vue arrière) depuis les réglages.
+- **Ta propre voiture** : importe un PNG à fond transparent (vue arrière) depuis les réglages, puis place toi-même les feux arrière (allumés en mode sombre) et la plaque, et choisis la couleur de la plaque et du texte.
 - **Vitesse GPS** en km/h ou mph, **heure du système**, **météo** de ta position ([Open-Meteo](https://open-meteo.com), sans compte).
-- **Lecteur YT Music** intégré (le widget officiel), et n'importe quel autre widget par appui long sur l'écran.
+- **Widgets** : n'importe quel widget (lecteur YT Music, Spotify…) s'ajoute ou se retire par appui long sur l'écran.
 - **Applis récentes** en bas à gauche, liste complète des applis avec des icônes unifiées.
 - **Deux styles** : glassmorphism (verre dépoli) ou neumorphism (relief doux), en clair, sombre ou automatique, avec 6 couleurs d'accent.
 - Barre de navigation Android masquable pour un écran épuré.
@@ -28,7 +32,7 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 1. Télécharge `DEON-Launcher.apk` depuis la page [Releases](../../releases).
 2. Copie-le sur une clé USB, branche-la sur l'autoradio et ouvre le fichier depuis le gestionnaire de fichiers. Autorise l'installation depuis cette source si Android le demande.
 3. Appuie sur le bouton Accueil et choisis **DEON Launcher**, ou va dans *Paramètres › Applications › Applications par défaut › Application d'accueil*.
-4. Au premier lancement, accepte la localisation (vitesse et météo), puis touche « Activer les applis récentes » et « Lecteur YT Music ».
+4. Au premier lancement, accepte la localisation (vitesse et météo), puis touche « Activer les applis récentes ».
 
 Sur certains autoradios chinois (FYT, Topway…), le choix du launcher peut être verrouillé dans les réglages d'usine.
 
@@ -54,3 +58,7 @@ L'APK se trouve dans `app/build/outputs/apk/debug/`. Le script `gps-trajet.sh` s
 ## Licence
 
 Code sous licence MIT, voir [LICENSE](LICENSE).
+
+## Mots clés
+
+launcher autoradio, android car launcher, head unit launcher, ROCO K706, autoradio Android 14, launcher voiture, car stereo launcher, glassmorphism, neumorphism

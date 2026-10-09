@@ -39,6 +39,7 @@ object Ui {
     val Home = Glyph('')
     val Text = Glyph('')
     val Wavy = Glyph('')
+    val Edit = Glyph('')
 
     val Sun = Glyph('')
     val Moon = Glyph('')

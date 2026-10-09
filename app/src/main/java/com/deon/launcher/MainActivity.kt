@@ -85,7 +85,6 @@ private const val HOST_ID = 1024
 private const val REQ_BIND = 1
 private const val REQ_CONFIG = 2
 private const val RECENT_COUNT = 8
-private const val YT_MUSIC = "com.google.android.apps.youtube.music"
 
 class MainActivity : ComponentActivity(), LocationListener {
     private lateinit var host: AppWidgetHost
@@ -93,13 +92,12 @@ class MainActivity : ComponentActivity(), LocationListener {
     private val widgets = mutableStateListOf<Int>()
     private var speedKmh by mutableFloatStateOf(0f)
     private var pendingId = -1
-    private var pendingForMusic = false
-    private var musicWidget by mutableIntStateOf(-1)
     private var recents by mutableStateOf(emptyList<App>())
     private var usageAllowed by mutableStateOf(false)
     private val prefs by lazy { getSharedPreferences("launcher", MODE_PRIVATE) }
     private val settings by lazy { LauncherSettings(this) }
     private var customCar by mutableStateOf<ImageBitmap?>(null)
+    private var carEditor by mutableStateOf(false)
     private val carFile by lazy { java.io.File(filesDir, "car.png") }
     private val pickCar = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(::importCar) }
 
@@ -125,6 +123,9 @@ class MainActivity : ComponentActivity(), LocationListener {
         carFile.outputStream().use { car.compress(Bitmap.CompressFormat.PNG, 100, it) }
         customCar = car.asImageBitmap()
         settings.customCar = true
+        // A new picture: start from the default guess and let the user place lights and plate.
+        settings.resetCarLayout()
+        carEditor = true
     }
 
     private fun resetCar() {
@@ -141,7 +142,12 @@ class MainActivity : ComponentActivity(), LocationListener {
         awm = AppWidgetManager.getInstance(this)
         host = AppWidgetHost(this, HOST_ID)
         widgets += prefs.getString("widgets", "")!!.split(',').mapNotNull { it.toIntOrNull() }
-        musicWidget = prefs.getInt("music_widget", -1)
+        // Older versions kept the YT Music player apart: it is now a widget like any other.
+        prefs.getInt("music_widget", -1).takeIf { it != -1 && it !in widgets }?.let {
+            widgets.add(0, it)
+            saveWidgets()
+            prefs.edit().remove("music_widget").apply()
+        }
         if (settings.customCar) customCar = runCatching { android.graphics.BitmapFactory.decodeFile(carFile.path)?.asImageBitmap() }.getOrNull()
         if (!hasGps()) askLocation.launch(ACCESS_FINE_LOCATION)
         setContent { LauncherTheme(settings) { Home() } }
@@ -169,6 +175,7 @@ class MainActivity : ComponentActivity(), LocationListener {
             appInfo = { openSystem(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
             importCar = { pickCar.launch(arrayOf("image/png", "image/webp", "image/*")) },
             resetCar = ::resetCar,
+            editCar = { carEditor = true },
             version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull() ?: ""
         )
     }
@@ -225,8 +232,7 @@ class MainActivity : ComponentActivity(), LocationListener {
 
     // --- Widgets: pick -> bind (system prompt if needed) -> configure -> add ---
 
-    private fun pickProvider(provider: ComponentName, forMusic: Boolean = false) {
-        pendingForMusic = forMusic
+    private fun pickProvider(provider: ComponentName) {
         pendingId = host.allocateAppWidgetId()
         if (awm.bindAppWidgetIdIfAllowed(pendingId, provider)) configureOrAdd()
         else startActivityForResult(
@@ -247,19 +253,8 @@ class MainActivity : ComponentActivity(), LocationListener {
     }
 
     private fun addWidget() {
-        if (pendingForMusic) {
-            musicWidget = pendingId
-            prefs.edit().putInt("music_widget", pendingId).apply()
-            return
-        }
         widgets += pendingId
         saveWidgets()
-    }
-
-    private fun removeMusicWidget() {
-        host.deleteAppWidgetId(musicWidget)
-        musicWidget = -1
-        prefs.edit().putInt("music_widget", -1).apply()
     }
 
     private fun removeWidget(id: Int) {
@@ -268,7 +263,7 @@ class MainActivity : ComponentActivity(), LocationListener {
         saveWidgets()
     }
 
-    private fun saveWidgets() = prefs.edit().putString("widgets", widgets.joinToString(",")).apply()
+    private fun saveWidgets() =prefs.edit().putString("widgets", widgets.joinToString(",")).apply()
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -346,8 +341,9 @@ class MainActivity : ComponentActivity(), LocationListener {
         var picker by remember { mutableStateOf(false) }
         var edit by remember { mutableStateOf(false) }
         var settingsOpen by remember { mutableStateOf(false) }
-        BackHandler(drawer || edit || settingsOpen) {
+        BackHandler(drawer || edit || settingsOpen || carEditor) {
             when {
+                carEditor -> carEditor = false
                 settingsOpen -> settingsOpen = false
                 drawer -> drawer = false
                 else -> edit = false
@@ -370,7 +366,7 @@ class MainActivity : ComponentActivity(), LocationListener {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     Box(Modifier.weight(1.25f).fillMaxHeight()) {
                         ClioScene(
-                            speedKmh, LocalDark.current, c.onBackground, c.primary, settings.plate, settings.carMotion,
+                            speedKmh, LocalDark.current, c.onBackground, c.primary, settings.plate, settings.carLayout, settings.carMotion,
                             customCar, Modifier.fillMaxSize()
                         )
                         if (settings.showSpeed) Column(Modifier.padding(start = 8.dp, top = 4.dp)) {
@@ -395,8 +391,7 @@ class MainActivity : ComponentActivity(), LocationListener {
                                 verticalArrangement = Arrangement.spacedBy(18.dp)
                             ) {
                                 WeatherPanel(::currentLocation, Modifier.fillMaxWidth())
-                                Box(Modifier.fillMaxWidth().height(1.dp).background(c.outlineVariant))
-                                MusicSlot(edit)
+                                if (widgets.isNotEmpty()) Box(Modifier.fillMaxWidth().height(1.dp).background(c.outlineVariant))
                                 widgets.forEach { id -> key(id) { Widget(id, edit) } }
                             }
                         }
@@ -420,41 +415,12 @@ class MainActivity : ComponentActivity(), LocationListener {
                 enter = fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 12 },
                 exit = fadeOut(tween(180)) + slideOutHorizontally(tween(200)) { it / 12 }
             ) { Overlay { SettingsScreen(settingsActions) { settingsOpen = false } } }
+            AnimatedVisibility(carEditor, enter = fadeIn(tween(200)), exit = fadeOut(tween(160))) {
+                Overlay { CarEditor(customCar) { carEditor = false } }
+            }
         }
         }
         if (picker) WidgetPicker { picker = false }
-    }
-
-    /** The YT Music player widget, placed under the weather. */
-    @Composable
-    private fun MusicSlot(edit: Boolean) {
-        val c = MaterialTheme.colorScheme
-        val info = if (musicWidget == -1) null else awm.getAppWidgetInfo(musicWidget)
-        if (info != null) {
-            val minHeight = with(LocalDensity.current) { info.minHeight.toDp() }
-            Box(Modifier.fillMaxWidth().height(maxOf(minHeight, 110.dp)).clip(RoundedCornerShape(18.dp))) {
-                key(musicWidget) { AndroidView({ host.createView(it, musicWidget, info) }, Modifier.fillMaxSize()) }
-                RemoveBadge(edit, Modifier.align(Alignment.TopEnd)) { removeMusicWidget() }
-            }
-            return
-        }
-        // The widest YT Music widget is the full player.
-        val provider = remember { awm.installedProviders.filter { it.provider.packageName == YT_MUSIC }.maxByOrNull { it.minWidth } }
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
-                .clickable(enabled = provider != null) { provider?.let { pickProvider(it.provider, forMusic = true) } },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(Modifier.size(56.dp).tile(16.dp), contentAlignment = Alignment.Center) { UIcon(Ui.Music, c.primary, 24.sp) }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text("Lecteur YT Music", color = c.onSurface, fontSize = 17.sp)
-                Text(
-                    if (provider != null) "Touche pour l'ajouter ici" else "Installe YT Music pour avoir son lecteur ici",
-                    color = if (provider != null) c.primary else c.onSurfaceVariant, fontSize = 14.sp
-                )
-            }
-        }
     }
 
     @Composable

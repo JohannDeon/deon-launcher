@@ -52,6 +52,7 @@ L'APK se trouve dans `app/build/outputs/apk/debug/`. Le script `gps-trajet.sh` s
 
 ## Crédits
 
+- Illustration de la Renault Clio 2 : dessinée par [JohannDeon](https://github.com/JohannDeon).
 - Icônes : [coolicons](https://github.com/krystonschwarze/coolicons) par Kryston Schwarze, sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Météo : [Open-Meteo.com](https://open-meteo.com), données sous licence CC BY 4.0.
 

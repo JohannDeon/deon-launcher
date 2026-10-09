@@ -2,19 +2,19 @@
 
 Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 1280x720), testé sur l'autoradio **ROCO K706**. Il affiche ta voiture en grand, avec la vitesse GPS, l'heure, la météo et ton lecteur de musique, dans un style glassmorphism ou neumorphism.
 
-![Accueil, glassmorphism sombre](docs/screenshots/accueil-glass-sombre.png)
+![Accueil, glassmorphism sombre](docs/screenshots/accueil-glass-sombre-v2.png)
 
 | Glassmorphism clair | Neumorphism clair | Neumorphism sombre |
 |---|---|---|
-| ![](docs/screenshots/accueil-glass-clair.png) | ![](docs/screenshots/accueil-neu-clair.png) | ![](docs/screenshots/accueil-neu-sombre.png) |
+| ![](docs/screenshots/accueil-glass-clair-v2.png) | ![](docs/screenshots/accueil-neu-clair-v2.png) | ![](docs/screenshots/accueil-neu-sombre-v2.png) |
 
 | Applications | Réglages | Réglages (neumorphism) |
 |---|---|---|
-| ![](docs/screenshots/applis-glass-sombre.png) | ![](docs/screenshots/reglages-glass-sombre.png) | ![](docs/screenshots/reglages-neu-clair.png) |
+| ![](docs/screenshots/applis-glass-sombre-v2.png) | ![](docs/screenshots/reglages-glass-sombre-v2.png) | ![](docs/screenshots/reglages-neu-clair-v2.png) |
 
 | Grille de widgets en mode édition | Feux et plaque d'une voiture importée |
 |---|---|
-| ![](docs/screenshots/grille-widgets.png) | ![](docs/screenshots/editeur-voiture.png) |
+| ![](docs/screenshots/grille-widgets-v2.png) | ![](docs/screenshots/editeur-voiture-v2.png) |
 
 ## Fonctionnalités
 

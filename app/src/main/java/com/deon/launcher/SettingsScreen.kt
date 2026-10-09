@@ -82,7 +82,8 @@ fun SettingsScreen(actions: SettingsActions, onClose: () -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Section("Météo et écran") {
                     Setting(Ui.Sun, "Température") { Choice(TempUnit.entries, s.tempUnit, { it.label }) { s.tempUnit = it } }
-                    Setting(Ui.Hide, "Masquer la barre Android") { Toggle(s.hideNavBar) { s.hideNavBar = it } }
+                    Setting(Ui.Hide, "Masquer la barre du bas") { Toggle(s.hideNavBar) { s.hideNavBar = it } }
+                    Setting(Ui.Hide, "Masquer la barre du haut") { Toggle(s.hideStatusBar) { s.hideStatusBar = it } }
                 }
                 Section("Autorisations") {
                     Link(Ui.Apps, "Accès aux applis récentes", actions.usageAccess)

@@ -38,6 +38,7 @@ class LauncherSettings(context: Context) {
     private val _tempUnit = enumPref("temp_unit", TempUnit.C)
     private val _plate = mutableStateOf(prefs.getString("plate", "AB-123-CD")!!)
     private val _hideNavBar = mutableStateOf(prefs.getBoolean("hide_nav_bar", true))
+    private val _hideStatusBar = mutableStateOf(prefs.getBoolean("hide_status_bar", false))
     private val _carMotion = mutableStateOf(prefs.getBoolean("car_motion", true))
     private val _showSpeed = mutableStateOf(prefs.getBoolean("show_speed", true))
     private val _customCar = mutableStateOf(prefs.getBoolean("custom_car", false))
@@ -65,6 +66,9 @@ class LauncherSettings(context: Context) {
     var hideNavBar: Boolean
         get() = _hideNavBar.value
         set(v) { _hideNavBar.value = v; prefs.edit().putBoolean("hide_nav_bar", v).apply() }
+    var hideStatusBar: Boolean
+        get() = _hideStatusBar.value
+        set(v) { _hideStatusBar.value = v; prefs.edit().putBoolean("hide_status_bar", v).apply() }
     var carMotion: Boolean
         get() = _carMotion.value
         set(v) { _carMotion.value = v; prefs.edit().putBoolean("car_motion", v).apply() }

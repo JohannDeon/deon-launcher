@@ -25,7 +25,7 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 - **Widgets** : n'importe quel widget (lecteur YT Music, Spotify…) s'ajoute ou se retire par appui long sur l'écran.
 - **Applis récentes** en bas à gauche, liste complète des applis avec des icônes unifiées.
 - **Deux styles** : glassmorphism (verre dépoli) ou neumorphism (relief doux), en clair, sombre ou automatique, avec 6 couleurs d'accent.
-- Barre de navigation Android masquable pour un écran épuré.
+- Barres Android du haut et du bas masquables pour un écran épuré.
 
 ## Installation
 

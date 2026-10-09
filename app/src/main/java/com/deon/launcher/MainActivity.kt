@@ -158,10 +158,11 @@ class MainActivity : ComponentActivity(), LocationListener {
         if (hasFocus) applyNavBar()
     }
 
-    /** Hide Android's own bottom bar if asked; a swipe up from the bottom edge shows it again. */
+    /** Hide Android's own bars if asked; a swipe from the screen edge shows them again for a moment. */
     private fun applyNavBar() = WindowCompat.getInsetsController(window, window.decorView).run {
         systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         if (settings.hideNavBar) hide(WindowInsetsCompat.Type.navigationBars()) else show(WindowInsetsCompat.Type.navigationBars())
+        if (settings.hideStatusBar) hide(WindowInsetsCompat.Type.statusBars()) else show(WindowInsetsCompat.Type.statusBars())
     }
 
     private fun openSystem(intent: Intent) {
@@ -349,7 +350,7 @@ class MainActivity : ComponentActivity(), LocationListener {
                 else -> edit = false
             }
         }
-        LaunchedEffect(settings.hideNavBar) { applyNavBar() }
+        LaunchedEffect(settings.hideNavBar, settings.hideStatusBar) { applyNavBar() }
         // Long press anywhere on the free screen space shows the widget editing controls.
         val longPress = Modifier.pointerInput(Unit) { detectTapGestures(onLongPress = { edit = true }) }
         val c = MaterialTheme.colorScheme

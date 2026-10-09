@@ -57,9 +57,9 @@ fun Modifier.neu(radius: Dp, dark: Boolean, elevation: Dp = 7.dp, inset: Boolean
 
 /** Large panel: frosted glass or raised soft-UI, depending on the chosen style. */
 @Composable
-fun Panel(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
-    if (LocalSettings.current.style == Style.GLASS) Glass(modifier, content = content)
-    else Box(modifier.neu(28.dp, LocalDark.current, 10.dp).clip(RoundedCornerShape(28.dp)), content = content)
+fun Panel(modifier: Modifier = Modifier, radius: Dp = 28.dp, content: @Composable BoxScope.() -> Unit) {
+    if (LocalSettings.current.style == Style.GLASS) Glass(modifier, RoundedCornerShape(radius), content = content)
+    else Box(modifier.neu(radius, LocalDark.current, 10.dp).clip(RoundedCornerShape(radius)), content = content)
 }
 
 /** Small element background (icon tiles, round buttons) in the current style. */

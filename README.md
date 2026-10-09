@@ -12,9 +12,9 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 |---|---|---|
 | ![](docs/screenshots/applis-glass-sombre.png) | ![](docs/screenshots/reglages-glass-sombre.png) | ![](docs/screenshots/reglages-neu-clair.png) |
 
-| Feux et plaque d'une voiture importée |
-|---|
-| ![](docs/screenshots/editeur-voiture.png) |
+| Grille de widgets en mode édition | Feux et plaque d'une voiture importée |
+|---|---|
+| ![](docs/screenshots/grille-widgets.png) | ![](docs/screenshots/editeur-voiture.png) |
 
 ## Fonctionnalités
 
@@ -22,7 +22,7 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 - **Ta plaque d'immatriculation** affichée sur la voiture.
 - **Ta propre voiture** : importe un PNG à fond transparent (vue arrière) depuis les réglages, puis place toi-même les feux arrière (allumés en mode sombre) et la plaque, et choisis la couleur de la plaque et du texte.
 - **Vitesse GPS** en km/h ou mph, **heure du système**, **météo** de ta position ([Open-Meteo](https://open-meteo.com), sans compte).
-- **Widgets** : n'importe quel widget (lecteur YT Music, Spotify…) s'ajoute ou se retire par appui long sur l'écran.
+- **Grille de widgets** jusqu'en bas de l'écran : par appui long, ajoute, déplace et redimensionne chaque widget, et règle l'arrondi de ses coins. Météo DEON, lecteur de musique DEON (style YT Music, avec pouces et pochette) ou n'importe quel widget Android, comme le lecteur YT Music d'origine.
 - **Applis récentes** en bas à gauche, liste complète des applis avec des icônes unifiées.
 - **Deux styles** : glassmorphism (verre dépoli) ou neumorphism (relief doux), en clair, sombre ou automatique, avec 6 couleurs d'accent.
 - Barres Android du haut et du bas masquables pour un écran épuré.
@@ -33,6 +33,7 @@ Un launcher Android moderne pour autoradios (Android 10 à 14, écran paysage 12
 2. Copie-le sur une clé USB, branche-la sur l'autoradio et ouvre le fichier depuis le gestionnaire de fichiers. Autorise l'installation depuis cette source si Android le demande.
 3. Appuie sur le bouton Accueil et choisis **DEON Launcher**, ou va dans *Paramètres › Applications › Applications par défaut › Application d'accueil*.
 4. Au premier lancement, accepte la localisation (vitesse et météo), puis touche « Activer les applis récentes ».
+5. Pour le lecteur de musique DEON, touche « Autoriser » et active DEON Launcher dans l'accès aux notifications. Si Android bloque l'option, ouvre « Infos de l'appli », menu ⋮, « Autoriser les paramètres restreints », puis recommence.
 
 Sur certains autoradios chinois (FYT, Topway…), le choix du launcher peut être verrouillé dans les réglages d'usine.
 

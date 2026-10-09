@@ -89,7 +89,7 @@ private const val RECENT_COUNT = 8
 class MainActivity : ComponentActivity(), LocationListener {
     private lateinit var host: AppWidgetHost
     private lateinit var awm: AppWidgetManager
-    private val widgets = mutableStateListOf<Int>()
+    private lateinit var grid: WidgetGridState
     private var speedKmh by mutableFloatStateOf(0f)
     private var pendingId = -1
     private var recents by mutableStateOf(emptyList<App>())
@@ -141,13 +141,10 @@ class MainActivity : ComponentActivity(), LocationListener {
         super.onCreate(savedInstanceState)
         awm = AppWidgetManager.getInstance(this)
         host = AppWidgetHost(this, HOST_ID)
-        widgets += prefs.getString("widgets", "")!!.split(',').mapNotNull { it.toIntOrNull() }
-        // Older versions kept the YT Music player apart: it is now a widget like any other.
-        prefs.getInt("music_widget", -1).takeIf { it != -1 && it !in widgets }?.let {
-            widgets.add(0, it)
-            saveWidgets()
-            prefs.edit().remove("music_widget").apply()
-        }
+        // The grid replaces the older single column: its widgets (and the separate YT Music slot) move onto it.
+        val legacy = prefs.getString("widgets", "")!!.split(',').mapNotNull { it.toIntOrNull() } +
+            listOfNotNull(prefs.getInt("music_widget", -1).takeIf { it != -1 })
+        grid = WidgetGridState(prefs, legacy.distinct())
         if (settings.customCar) customCar = runCatching { android.graphics.BitmapFactory.decodeFile(carFile.path)?.asImageBitmap() }.getOrNull()
         if (!hasGps()) askLocation.launch(ACCESS_FINE_LOCATION)
         setContent { LauncherTheme(settings) { Home() } }
@@ -254,17 +251,15 @@ class MainActivity : ComponentActivity(), LocationListener {
     }
 
     private fun addWidget() {
-        widgets += pendingId
-        saveWidgets()
+        if (grid.add(TileKind.APP, pendingId)) return
+        host.deleteAppWidgetId(pendingId)
+        android.widget.Toast.makeText(this, "Plus de place sur la grille : réduis ou retire un widget", android.widget.Toast.LENGTH_LONG).show()
     }
 
-    private fun removeWidget(id: Int) {
-        widgets -= id
-        host.deleteAppWidgetId(id)
-        saveWidgets()
+    private fun removeTile(tile: Tile) {
+        if (tile.kind == TileKind.APP) host.deleteAppWidgetId(tile.appId)
+        grid.remove(tile.key)
     }
-
-    private fun saveWidgets() =prefs.edit().putString("widgets", widgets.joinToString(",")).apply()
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -342,12 +337,13 @@ class MainActivity : ComponentActivity(), LocationListener {
         var picker by remember { mutableStateOf(false) }
         var edit by remember { mutableStateOf(false) }
         var settingsOpen by remember { mutableStateOf(false) }
+        var selected by remember { mutableStateOf<Long?>(null) }
         BackHandler(drawer || edit || settingsOpen || carEditor) {
             when {
                 carEditor -> carEditor = false
                 settingsOpen -> settingsOpen = false
                 drawer -> drawer = false
-                else -> edit = false
+                else -> { edit = false; selected = null }
             }
         }
         LaunchedEffect(settings.hideNavBar, settings.hideStatusBar) { applyNavBar() }
@@ -360,12 +356,12 @@ class MainActivity : ComponentActivity(), LocationListener {
         CompositionLocalProvider(LocalRootSize provides rootSize) {
         Box(Modifier.fillMaxSize().onSizeChanged { rootSize = it }) {
             Backdrop(Modifier.fillMaxSize())
-            Column(
+            Row(
                 Modifier.fillMaxSize().then(longPress).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Box(Modifier.weight(1.25f).fillMaxHeight()) {
+                Column(Modifier.weight(1.25f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
                         ClioScene(
                             speedKmh, LocalDark.current, c.onBackground, c.primary, settings.plate, settings.carLayout, settings.carMotion,
                             customCar, Modifier.fillMaxSize()
@@ -378,32 +374,29 @@ class MainActivity : ComponentActivity(), LocationListener {
                             Text(settings.speedUnit.label.uppercase(), color = c.onSurfaceVariant, fontSize = 14.sp, letterSpacing = 3.sp)
                         }
                     }
-                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Panel(Modifier.fillMaxWidth()) { Clock(Modifier.padding(horizontal = 24.dp, vertical = 18.dp)) }
-                        AnimatedVisibility(edit, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Pill("Ajouter un widget", Modifier.weight(1.5f), filled = true, icon = { UIcon(Ui.Plus, it, 16.sp) }) { picker = true }
-                                Pill("Terminé", Modifier.weight(1f), filled = false) { edit = false }
-                            }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(56.dp).tile(18.dp).clickable { drawer = true }, contentAlignment = Alignment.Center) {
+                            UIcon(Ui.Apps, c.primary, 24.sp)
                         }
-                        Panel(Modifier.weight(1f).fillMaxWidth()) {
-                            Column(
-                                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
-                                verticalArrangement = Arrangement.spacedBy(18.dp)
-                            ) {
-                                WeatherPanel(::currentLocation, Modifier.fillMaxWidth())
-                                if (widgets.isNotEmpty()) Box(Modifier.fillMaxWidth().height(1.dp).background(c.outlineVariant))
-                                widgets.forEach { id -> key(id) { Widget(id, edit) } }
-                            }
-                        }
+                        Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(28.dp).background(c.outlineVariant))
+                        RecentRow()
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(56.dp).tile(18.dp).clickable { drawer = true }, contentAlignment = Alignment.Center) {
-                        UIcon(Ui.Apps, c.primary, 24.sp)
+                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Panel(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) { Clock(Modifier.padding(horizontal = 24.dp, vertical = 18.dp)) }
+                    AnimatedVisibility(edit, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                        val sel = grid.tiles.firstOrNull { it.key == selected }
+                        if (sel != null) TileControls(
+                            sel.radius, { grid.setRadius(sel.key, it) },
+                            onRemove = { removeTile(sel); selected = null }, onDone = { selected = null },
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                        )
+                        else Row(Modifier.padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Pill("Ajouter un widget", Modifier.weight(1.5f), filled = true, icon = { UIcon(Ui.Plus, it, 16.sp) }) { picker = true }
+                            Pill("Terminé", Modifier.weight(1f), filled = false) { edit = false; selected = null }
+                        }
                     }
-                    Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(28.dp).background(c.outlineVariant))
-                    RecentRow()
+                    WidgetGrid(grid, edit, selected, { selected = it }, Modifier.weight(1f).fillMaxWidth()) { tile -> TileContent(tile) }
                 }
             }
             AnimatedVisibility(
@@ -423,15 +416,6 @@ class MainActivity : ComponentActivity(), LocationListener {
         }
         if (picker) WidgetPicker { picker = false }
     }
-
-    @Composable
-    private fun RemoveBadge(visible: Boolean, modifier: Modifier, onClick: () -> Unit) =
-        AnimatedVisibility(visible, modifier.padding(6.dp), enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
-            Box(
-                Modifier.size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = .55f)).clickable(onClick = onClick),
-                contentAlignment = Alignment.Center
-            ) { UIcon(Ui.Close, Color.White, 13.sp) }
-        }
 
     @SuppressLint("MissingPermission")
     private fun currentLocation(): Location? = lastFix ?: if (!hasGps()) null else getSystemService(LocationManager::class.java).let { lm ->
@@ -477,12 +461,35 @@ class MainActivity : ComponentActivity(), LocationListener {
     }
 
     @Composable
-    private fun Widget(id: Int, edit: Boolean) {
-        val info = awm.getAppWidgetInfo(id) ?: return
-        val minHeight = with(LocalDensity.current) { info.minHeight.toDp() }
-        Box(Modifier.fillMaxWidth().height(maxOf(minHeight, 120.dp)).clip(RoundedCornerShape(18.dp))) {
-            AndroidView({ host.createView(it, id, info) }, Modifier.fillMaxSize())
-            RemoveBadge(edit, Modifier.align(Alignment.TopEnd)) { removeWidget(id) }
+    private fun BuiltIn(label: String, onClose: () -> Unit, add: () -> Boolean) {
+        val c = MaterialTheme.colorScheme
+        Text(
+            label,
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {
+                onClose()
+                if (!add()) android.widget.Toast.makeText(this, "Plus de place sur la grille", android.widget.Toast.LENGTH_LONG).show()
+            }.padding(14.dp),
+            color = c.primary, fontSize = 17.sp, fontWeight = FontWeight.Medium
+        )
+    }
+
+    /** What each grid tile draws: the launcher's own panels in the current style, or the app widget clipped to its corners. */
+    @Composable
+    private fun TileContent(tile: Tile) {
+        val r = tile.radius.dp
+        when (tile.kind) {
+            TileKind.WEATHER -> Panel(Modifier.fillMaxSize(), r) {
+                Box(Modifier.fillMaxSize().padding(horizontal = 22.dp), contentAlignment = Alignment.CenterStart) {
+                    WeatherPanel(::currentLocation, Modifier.fillMaxWidth())
+                }
+            }
+            TileKind.MUSIC -> Panel(Modifier.fillMaxSize(), r) { MusicTile(tile.h, Modifier.fillMaxSize()) }
+            TileKind.APP -> {
+                val info = awm.getAppWidgetInfo(tile.appId) ?: return
+                Box(Modifier.fillMaxSize().clip(RoundedCornerShape(r))) {
+                    AndroidView({ host.createView(it, tile.appId, info) }, Modifier.fillMaxSize())
+                }
+            }
         }
     }
 
@@ -543,6 +550,9 @@ class MainActivity : ComponentActivity(), LocationListener {
             containerColor = c.surface,
             text = {
                 LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                    // The launcher's own widgets first, in the accent colour.
+                    item { BuiltIn("Météo DEON", onClose) { grid.add(TileKind.WEATHER) } }
+                    item { BuiltIn("Lecteur de musique DEON", onClose) { grid.add(TileKind.MUSIC) } }
                     items(providers) { p ->
                         Text(
                             p.loadLabel(packageManager),

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aperçu DEON Launcher</title>
+<style>
+  :root{--bg:#e9edf2;--panel:#fff;--fg:#111;--btn:#4f5d9b}
+  :root[data-theme=dark]{--bg:#0e1116;--panel:#1a1f27;--fg:#eee;--btn:#b8c3ff}
+  body{margin:0;background:#333;font-family:system-ui,sans-serif;color:#ddd;padding:16px}
+  .ctl{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  #screen{width:1280px;height:720px;max-width:100%;aspect-ratio:16/9;background:var(--bg);color:var(--fg);display:flex;gap:12px;padding:12px;box-sizing:border-box;transform-origin:0 0}
+  .car{flex:1.15;position:relative;border-radius:20px;overflow:hidden}
+  canvas{width:100%;height:100%;display:block}
+  .ov{position:absolute;color:#fff;font-weight:700;text-shadow:0 0 8px rgba(0,0,0,.6)}
+  .right{flex:1;display:flex;flex-direction:column;gap:12px}
+  .widgets{flex:1;background:var(--panel);border-radius:20px;padding:24px;font-size:18px}
+  .btns{display:flex;gap:12px}.btns div{flex:1;height:72px;border-radius:18px;background:var(--btn);color:var(--bg);display:grid;place-items:center;font-size:22px}
+</style></head><body>
+<div class="ctl">
+  <label>Vitesse GPS : <input id="v" type="range" min="0" max="180" value="50"> <b id="vl">50</b> km/h</label>
+  <label><input id="n" type="checkbox"> Mode nuit</label>
+</div>
+<div id="screen">
+  <div class="car"><canvas id="c"></canvas>
+    <div class="ov" style="top:20px;left:20px"><div id="h" style="font-size:64px"></div><div id="d" style="font-size:20px"></div></div>
+    <div class="ov" id="s" style="top:20px;right:20px;font-size:44px"></div>
+  </div>
+  <div class="right"><div class="widgets">Aucun widget. Appuie sur « + Widget ».</div>
+    <div class="btns"><div>Applications</div><div>+ Widget</div></div></div>
+</div>
+<script>
+// Same drawing as app/src/main/java/com/deon/launcher/Clio.kt, ported to canvas.
+const cv=document.getElementById('c'),g=cv.getContext('2d');let phase=0,last=0;
+const $=id=>document.getElementById(id);
+function quad(a,b,c,d,f){g.beginPath();g.moveTo(...a);g.lineTo(...b);g.lineTo(...c);g.lineTo(...d);g.closePath();g.fillStyle=f;g.fill()}
+function rr(x,y,w,h,r,f){g.beginPath();g.roundRect(x,y,w,h,r);g.fillStyle=f;g.fill()}
+function vg(y0,y1,a,b){const k=g.createLinearGradient(0,y0,0,y1);k.addColorStop(0,a);k.addColorStop(1,b);return k}
+function draw(speed,night){
+  const w=cv.width,h=cv.height,cx=w/2,hz=h*.38;
+  g.fillStyle=vg(0,hz,night?'#04060D':'#6FAEE6',night?'#1C2344':'#DDECF8');g.fillRect(0,0,w,hz);
+  g.fillStyle=night?'#111A14':'#6C9C52';g.fillRect(0,hz,w,h-hz);
+  const top=w*.03,bot=w*.75,p=(u,t)=>[cx+u*(top+(bot-top)*t),hz+(h-hz)*t];
+  const strip=(u,hf,t1,t2,f)=>quad(p(u-hf,t1),p(u+hf,t1),p(u+hf,t2),p(u-hf,t2),f);
+  strip(0,1,0,1,night?'#25282E':'#52565C');const pa=night?'#BFC3C9':'#fff';
+  strip(-.93,.02,0,1,pa);strip(.93,.02,0,1,pa);
+  const s=phase-Math.floor(phase);
+  for(let k=1;k<=40;k++){const d=k-s+.5;strip(-.33,.025,1/d,1/(d+.45),pa);strip(.33,.025,1/d,1/(d+.45),pa)}
+  if(night)strip(0,.5,.45,.9,vg(p(0,.45)[1],p(0,.9)[1],'rgba(255,243,192,0)','rgba(255,243,192,.25)'));
+  const cw=w*.46,ch=cw*.85,yb=h*.95,bo=speed>2?Math.sin(phase*40)*h*.0025:0,X=f=>cx+cw*f,Y=f=>yb-ch*f+bo;
+  const t=night?['#8E939C','#C9CDD4']:['#C9CCD0','#F8F8F6'];const body=g.createLinearGradient(X(-.5),0,X(.5),0);
+  body.addColorStop(0,t[0]);body.addColorStop(.5,t[1]);body.addColorStop(1,t[0]);
+  const red=vg(Y(.66),Y(.40),'#E3262D','#8E0F14');
+  const box=(fx,fy,fw,fh,r,f)=>rr(X(fx),Y(fy),cw*fw,ch*fh,r,f);
+  g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(cx,yb,cw*.54,cw*.04,0,0,7);g.fill();
+  const th=ch*.2,tw=cw*.16,sp=th/5,off=(phase*6%1)*sp;
+  for(const xl of[X(-.47),X(.47)-tw]){rr(xl,yb-th,tw,th,tw*.18,'#141414');g.strokeStyle='#3A3A3A';g.lineWidth=cw*.008;
+    for(let i=0;i<=5;i++){const ty=yb-(i*sp+off)%th;g.beginPath();g.moveTo(xl+tw*.12,ty);g.lineTo(xl+tw*.88,ty);g.stroke()}}
+  g.fillStyle='#2A2A2A';g.beginPath();g.ellipse(X(-.325),Y(.14),cw*.035,ch*.02,0,0,7);g.fill();
+  box(-.5,.36,1,.22,cw*.07,body);box(-.42,.19,.84,.035,cw*.01,'#3A3D42');
+  box(-.49,.64,.98,.30,cw*.08,body);quad([X(-.46),Y(.62)],[X(.46),Y(.62)],[X(.34),Y(.96)],[X(-.34),Y(.96)],body);
+  box(-.35,.99,.70,.06,cw*.05,body);
+  quad([X(-.39),Y(.65)],[X(.39),Y(.65)],[X(.30),Y(.90)],[X(-.30),Y(.90)],vg(Y(.90),Y(.65),night?'#05070A':'#151B24',night?'#0D1118':'#3B4A5C'));
+  quad([X(-.12),Y(.65)],[X(.02),Y(.65)],[X(.14),Y(.90)],[X(.04),Y(.90)],'rgba(255,255,255,.1)');
+  box(-.27,.955,.54,.045,ch*.02,body);box(-.09,.94,.18,.014,0,red);
+  for(const fx of[-.49,.34]){box(fx,.66,.15,.26,cw*.03,red);box(fx+.03,.50,.09,.07,cw*.015,'#EDE6E6');
+    if(night){const c=[X(fx+.075),Y(.60)],k=g.createRadialGradient(...c,0,...c,cw*.16);k.addColorStop(0,'rgba(255,32,32,.4)');k.addColorStop(1,'rgba(255,32,32,0)');g.fillStyle=k;g.fillRect(c[0]-cw*.16,c[1]-cw*.16,cw*.32,cw*.32)}}
+  const px=X(-.15),py=Y(.50),pw=cw*.30,ph=ch*.075;g.fillStyle='#fff';g.fillRect(px,py,pw,ph);g.fillStyle='#1F4BB5';g.fillRect(px,py,cw*.025,ph);
+  g.strokeStyle='#000';g.lineWidth=cw*.004;g.strokeRect(px,py,pw,ph);g.fillStyle='#000';g.font=`bold ${ph*.7}px monospace`;g.textAlign='center';g.fillText('AB-123-CD',X(.012),Y(.445));
+  g.strokeStyle='#B8BCC2';g.lineWidth=cw*.008;g.beginPath();g.moveTo(cx,Y(.615));g.lineTo(X(.035),Y(.565));g.lineTo(cx,Y(.515));g.lineTo(X(-.035),Y(.565));g.closePath();g.stroke();
+}
+function frame(ts){const v=+$('v').value,n=$('n').checked;document.documentElement.dataset.theme=n?'dark':'light';
+  if(last)phase+=(ts-last)/1000*v/40;last=ts;
+  const r=cv.getBoundingClientRect();if(cv.width!==Math.round(r.width)){cv.width=r.width;cv.height=r.height}
+  draw(v,n);$('vl').textContent=v;$('s').textContent=v+' km/h';const d=new Date();
+  $('h').textContent=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});$('d').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script></body></html>

@@ -1,0 +1,17 @@
+# Build output and local machine files
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# APKs go to GitHub Releases, not the repository
+*.apk
+
+# Local previews and working files
+apercu*.png
+apercu.html
+/clio.png

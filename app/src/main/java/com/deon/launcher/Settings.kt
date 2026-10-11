@@ -41,6 +41,7 @@ class LauncherSettings(context: Context) {
     private val _hideStatusBar = mutableStateOf(prefs.getBoolean("hide_status_bar", false))
     private val _carMotion = mutableStateOf(prefs.getBoolean("car_motion", true))
     private val _showSpeed = mutableStateOf(prefs.getBoolean("show_speed", true))
+    private val _btMusicApp = mutableStateOf(prefs.getString("bt_music_app", "")!!)
     private val _customCar = mutableStateOf(prefs.getBoolean("custom_car", false))
     private val _layoutClio = mutableStateOf(CarLayout.decode(prefs.getString("layout_clio", null), CarLayout.Clio))
     private val _layoutCustom = mutableStateOf(CarLayout.decode(prefs.getString("layout_custom", null), CarLayout.Imported))
@@ -72,6 +73,10 @@ class LauncherSettings(context: Context) {
     var carMotion: Boolean
         get() = _carMotion.value
         set(v) { _carMotion.value = v; prefs.edit().putBoolean("car_motion", v).apply() }
+    /** Package of the head unit's Bluetooth music app chosen by the user; empty means detect it by name. */
+    var btMusicApp: String
+        get() = _btMusicApp.value
+        set(v) { _btMusicApp.value = v; prefs.edit().putString("bt_music_app", v).apply() }
     var showSpeed: Boolean
         get() = _showSpeed.value
         set(v) { _showSpeed.value = v; prefs.edit().putBoolean("show_speed", v).apply() }

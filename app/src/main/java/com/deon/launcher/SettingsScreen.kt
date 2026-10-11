@@ -14,7 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,6 +85,9 @@ fun SettingsScreen(actions: SettingsActions, onClose: () -> Unit) {
                     Setting(Ui.Hide, "Masquer la barre du bas") { Toggle(s.hideNavBar) { s.hideNavBar = it } }
                     Setting(Ui.Hide, "Masquer la barre du haut") { Toggle(s.hideStatusBar) { s.hideStatusBar = it } }
                 }
+                Section("Musique") {
+                    BtMusicSetting()
+                }
                 Section("Autorisations") {
                     Link(Ui.Apps, "Accès aux applis récentes", actions.usageAccess)
                     Link(Ui.Home, "Écran d'accueil par défaut", actions.homeApp)
@@ -100,6 +103,49 @@ fun SettingsScreen(actions: SettingsActions, onClose: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** Which app the Bluetooth button of the music player opens: detected by name, or chosen in a list. */
+@Composable
+private fun BtMusicSetting() {
+    val s = LocalSettings.current
+    val c = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var picking by remember { mutableStateOf(false) }
+    val app = remember(s.btMusicApp) { bluetoothMusicApp(context, s.btMusicApp) }
+    Setting(Ui.Music, "Musique Bluetooth") { SmallButton("Choisir", onClick = { picking = true }) }
+    Text(
+        when {
+            app == null -> "Aucune appli trouvée : choisis l'appli musique Bluetooth de l'autoradio."
+            s.btMusicApp.isEmpty() -> "Détectée : ${app.label}"
+            else -> "Choisie : ${app.label}"
+        },
+        Modifier.padding(start = 34.dp, bottom = 8.dp), color = c.onSurfaceVariant, fontSize = 13.sp
+    )
+    if (picking) {
+        val apps = remember { launchableApps(context) }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { picking = false },
+            confirmButton = {
+                androidx.compose.material3.TextButton({ s.btMusicApp = ""; picking = false }) { Text("Détection auto", color = c.primary) }
+            },
+            title = { Text("Appli musique Bluetooth", fontWeight = FontWeight.Light) },
+            containerColor = c.surface,
+            text = {
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                    items(apps.size) { i ->
+                        val a = apps[i]
+                        Text(
+                            a.label,
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                                .clickable { s.btMusicApp = a.pkg; picking = false }.padding(14.dp),
+                            color = if (a.pkg == s.btMusicApp) c.primary else c.onSurface, fontSize = 17.sp
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 

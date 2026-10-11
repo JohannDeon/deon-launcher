@@ -83,9 +83,11 @@ fun MusicTile(rows: Int, modifier: Modifier = Modifier) {
         val listener = ComponentName(context, MediaListener::class.java)
         fun pick(list: List<MediaController>?) {
             val all = list.orEmpty()
-            controller = all.firstOrNull { it.packageName == YT_MUSIC }
-                ?: all.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            // Whatever is playing wins (YT Music, the Bluetooth music app…), else YT Music, else the latest session.
+            val next = all.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+                ?: all.firstOrNull { it.packageName == YT_MUSIC }
                 ?: all.firstOrNull()
+            if (next?.sessionToken != controller?.sessionToken) controller = next
         }
         val onChange = MediaSessionManager.OnActiveSessionsChangedListener { pick(it) }
         runCatching {
@@ -93,6 +95,18 @@ fun MusicTile(rows: Int, modifier: Modifier = Modifier) {
             pick(msm.getActiveSessions(listener))
         }
         onDispose { runCatching { msm.removeOnActiveSessionsChangedListener(onChange) } }
+    }
+    // A session that starts playing does not always reorder the list: look again now and then.
+    LaunchedEffect(allowed) {
+        if (!allowed) return@LaunchedEffect
+        val msm = context.getSystemService(MediaSessionManager::class.java)
+        val listener = ComponentName(context, MediaListener::class.java)
+        while (true) {
+            delay(3000)
+            val all = runCatching { msm.getActiveSessions(listener) }.getOrNull().orEmpty()
+            val playing = all.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            if (playing != null && playing.sessionToken != controller?.sessionToken) controller = playing
+        }
     }
 
     DisposableEffect(controller) {
@@ -160,7 +174,8 @@ fun MusicTile(rows: Int, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-                if (rows >= 2) YtBadge()
+                BluetoothButton()
+                if (rows >= 2) { Spacer(Modifier.width(8.dp)); YtBadge() }
             }
             if (!allowed) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallAction("Autoriser") {
@@ -199,6 +214,18 @@ fun MusicTile(rows: Int, modifier: Modifier = Modifier) {
 private fun appLabel(context: Context, pkg: String?) = pkg?.let {
     runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(it, 0)).toString() }.getOrNull()
 } ?: "Musique"
+
+/** Opens the head unit's Bluetooth music app, to play the phone's music. */
+@Composable
+private fun BluetoothButton() {
+    val context = LocalContext.current
+    val s = LocalSettings.current
+    Box(
+        Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = .16f))
+            .clickable { openBluetoothMusic(context, s.btMusicApp) },
+        contentAlignment = Alignment.Center
+    ) { BluetoothIcon(MaterialTheme.colorScheme.primary, 20.dp) }
+}
 
 /** Small red round badge with a play mark, like the one on the YT Music widget. */
 @Composable

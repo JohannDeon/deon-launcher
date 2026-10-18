@@ -85,6 +85,8 @@ private const val HOST_ID = 1024
 private const val REQ_BIND = 1
 private const val REQ_CONFIG = 2
 private const val RECENT_COUNT = 8
+private const val MAX_IMAGE_DIMENSION = 4096
+private const val MAX_IMAGE_PIXELS = 4_194_304L
 
 class MainActivity : ComponentActivity(), LocationListener {
     private lateinit var host: AppWidgetHost
@@ -105,8 +107,31 @@ class MainActivity : ComponentActivity(), LocationListener {
 
     /** Reads a picture and keeps only its visible part (transparent margins cut off), at most [maxWidth] px wide. */
     private fun loadCropped(uri: Uri, maxWidth: Int): Bitmap? {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        runCatching {
+            contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(it, null, bounds)
+            }
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            android.widget.Toast.makeText(this, "Image illisible", android.widget.Toast.LENGTH_LONG).show()
+            return null
+        }
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > MAX_IMAGE_DIMENSION ||
+            bounds.outHeight / sampleSize > MAX_IMAGE_DIMENSION ||
+            (bounds.outWidth.toLong() / sampleSize) * (bounds.outHeight.toLong() / sampleSize) > MAX_IMAGE_PIXELS
+        ) {
+            sampleSize *= 2
+        }
         val src = runCatching {
-            contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }
+            contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(
+                    it,
+                    null,
+                    android.graphics.BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                )
+            }
         }.getOrNull()
         if (src == null) {
             android.widget.Toast.makeText(this, "Image illisible", android.widget.Toast.LENGTH_LONG).show()
